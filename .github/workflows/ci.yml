@@ -1,0 +1,28 @@
+# Nome que aparece no separador Actions e nos pull requests
+name: CI
+
+# Quando corre: em cada pull request e em cada push para main
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Se fizeres outro push para o mesmo branch, cancela a execução anterior
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
