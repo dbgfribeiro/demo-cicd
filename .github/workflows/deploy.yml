@@ -1,0 +1,43 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # botão "Run workflow" no separador Actions
+
+# O que o GITHUB_TOKEN pode fazer nesta execução
+permissions:
+  contents: read   # ler o código
+  pages: write     # publicar no GitHub Pages
+  id-token: write  # provar ao Pages que o deploy vem deste repositório
+
+# Nunca dois deploys ao mesmo tempo. Um deploy a meio não é cancelado
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      # Guarda a pasta dist/ como artefacto, para o job deploy a usar
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build # só arranca se o build passar
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
